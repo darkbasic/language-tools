@@ -184,6 +184,9 @@ export function* generateComponent(
 		options.vueCompilerOptions.checkUnknownProps,
 		failedPropExps,
 	)];
+	const inferencePropCodes: Code[] = propCodes.map(code =>
+		typeof code === 'string' ? code : [code[0], code[1], code[2], {}]
+	);
 
 	// The instance type comes from a real construct call with a copy of the props: only a call resolves the
 	// overloads of the component and infers its type parameters from the props, including intersections of
@@ -200,9 +203,7 @@ export function* generateComponent(
 	yield `const ${functionalVar} = ${
 		options.vueCompilerOptions.checkUnknownProps ? names.asFunctionalComponent0 : names.asFunctionalComponent1
 	}(${componentVar}, new ${componentVar}({${newLine}`;
-	for (const code of propCodes) {
-		yield typeof code === 'string' ? code : [code[0], code[1], code[2], {}];
-	}
+	yield* inferencePropCodes;
 	yield `}))${endOfLine}`;
 
 	yield `const `;
@@ -291,7 +292,7 @@ export function* generateComponent(
 		if (options.vueCompilerOptions.checkRequiredFallthroughAttributes) {
 			const restsVar = ctx.getInternalVariable();
 			yield `var ${restsVar} = ${names.omit}(${getPropsVar()}, {${newLine}`;
-			yield* propCodes;
+			yield* inferencePropCodes;
 			yield `})${endOfLine}`;
 			ctx.inheritedAttrVars.add(restsVar);
 		}
